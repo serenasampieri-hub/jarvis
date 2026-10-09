@@ -1,0 +1,6 @@
+{
+  "name": "Jarvis",
+  "description": "Cabina di regia personale e decisionale per Serena Sampieri. Trasforma informazioni confuse in azioni pratiche con massima resa e minima spesa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
