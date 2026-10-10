@@ -238,7 +238,7 @@ async function runFase6TestSuite() {
     
     // Verifica che sia stato selezionato unicamente il record personale lecito
     assert(briefing.prioritaReale?.titolo === "Scegliere due libri da leggere in treno", "La priorità deve provenire dal record personale lecito.");
-    assert(briefing.babyStep?.azione.includes("borsone"), "Il baby step deve provenire dal record personale lecito.");
+    assert(Boolean(briefing.babyStep?.azione?.includes("borsone")), "Il baby step deve provenire dal record personale lecito.");
     
     // Verifica che anche il testo parlato completo sia al 100% conforme al perimetro
     const checkParlato = classifyPerimeter(briefing.testoParlatoCompleto);

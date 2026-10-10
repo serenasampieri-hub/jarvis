@@ -6,6 +6,15 @@
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
 
+[functions]
+  directory = "netlify/functions"
+
+# Reindirizzamento API verso la Serverless Function Netlify
+[[redirects]]
+  from = "/api/jarvis/analizza"
+  to = "/.netlify/functions/analizza"
+  status = 200
+
 # SPA Fallback per il router client-side
 [[redirects]]
   from = "/*"

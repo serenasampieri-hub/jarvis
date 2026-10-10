@@ -132,7 +132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [dismissedPairs, setDismissedPairs] = useState<Set<string>>(new Set());
-  const [selectedFilter, setSelectedFilter] = useState<"tutti" | "organizzazione" | "decisione" | "consiglio">("tutti");
+  const [selectedFilter, setSelectedFilter] = useState<"tutti" | "organizzazione" | "decisione" | "consiglio" | "deposito">("tutti");
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [dailyBriefing, setDailyBriefing] = useState<JarvisDailyBriefing | null>(null);
   const [showBriefing, setShowBriefing] = useState<boolean>(false);
@@ -353,6 +353,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return completedTasks.filter((t) => t.origin.toLowerCase() === selectedFilter);
   }, [completedTasks, selectedFilter]);
 
+  const depositi = useMemo(() => {
+    return history.filter(
+      (r) => r.modalitaEffettiva === "deposito" || r.modalita === "deposito"
+    );
+  }, [history]);
+
   const filterCounts = useMemo(() => {
     let org = 0;
     let dec = 0;
@@ -364,12 +370,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
       else if (orig === "consiglio") cons++;
     });
     return {
-      tutti: openTasks.length,
+      tutti: openTasks.length + depositi.length,
       organizzazione: org,
       decisione: dec,
       consiglio: cons,
+      deposito: depositi.length,
     };
-  }, [openTasks]);
+  }, [openTasks, depositi]);
 
   const handleToggleTask = (task: UnifiedTask) => {
     const rec = history.find((r) => r.id === task.recordId);
@@ -952,13 +959,102 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>Consiglio</span>
             <span className="text-[10px] font-mono opacity-80">{filterCounts.consiglio}</span>
           </button>
+
+          <button
+            onClick={() => setSelectedFilter("deposito")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedFilter === "deposito"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80"
+            }`}
+          >
+            <span>Deposito</span>
+            <span className="text-[10px] font-mono opacity-80">{filterCounts.deposito}</span>
+          </button>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. BABY STEP ATTIVI (Fedele a Pagina 2 PDF)                               */}
+      {/* SEZIONE: DEPOSITI & RIFLESSIONI CUSTODITE (Zero Compiti Forzati)          */}
       {/* ========================================================================= */}
-      <section className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+      {((selectedFilter === "tutti" && depositi.length > 0) || selectedFilter === "deposito") && (
+        <section className="bg-amber-50/40 border border-amber-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-amber-200/60 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wider flex items-center gap-2">
+                <Archive className="w-4 h-4 text-amber-700" />
+                <span>Depositi & Riflessioni Custodite ({depositi.length})</span>
+              </h3>
+              <p className="text-[11px] text-amber-900/70 font-mono mt-0.5">
+                Pensieri archiviati senza compiti forzati · Energia mentale protetta
+              </p>
+            </div>
+            {onNavigateToScaricoRapido && (
+              <button
+                type="button"
+                onClick={onNavigateToScaricoRapido}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold transition-all cursor-pointer shadow-xs min-h-[36px]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuovo Deposito</span>
+              </button>
+            )}
+          </div>
+
+          {depositi.length === 0 ? (
+            <div className="text-center py-6 text-amber-800/60 text-xs italic">
+              Nessun pensiero depositato al momento. Usa "Scarico Rapido" per svuotare la mente.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {depositi.map((dep) => (
+                <div
+                  key={dep.id}
+                  onClick={() => onSelectRecord(dep)}
+                  className="bg-white hover:bg-amber-50/60 border border-amber-200/80 rounded-xl p-4 space-y-2.5 transition-all cursor-pointer shadow-xs group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold text-amber-800 px-2 py-0.5 rounded bg-amber-50 border border-amber-200 inline-block">
+                          {dep.timestamp}
+                        </span>
+                        <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold">
+                          Zero Compiti
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-amber-950">
+                        {dep.deposito?.sintesi || dep.sintesi || dep.rawInput}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-400 group-hover:text-amber-700 shrink-0 transition-transform group-hover:translate-x-0.5 mt-1" />
+                  </div>
+
+                  {dep.deposito?.chiaviDiPensiero && dep.deposito.chiaviDiPensiero.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+                      {dep.deposito.chiaviDiPensiero.map((tag, i) => (
+                        <span
+                          key={i}
+                          className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {selectedFilter !== "deposito" && (
+        <>
+          {/* ========================================================================= */}
+          {/* 4. BABY STEP ATTIVI (Fedele a Pagina 2 PDF)                               */}
+          {/* ========================================================================= */}
+          <section className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -1338,7 +1434,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ))}
           </div>
         )}
-      </section>
+          </section>
+        </>
+      )}
 
       {/* Floating Action Bar per Selezione Multipla */}
       {selectedTaskIds.size > 0 && (

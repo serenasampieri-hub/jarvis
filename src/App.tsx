@@ -180,6 +180,98 @@ export default function App() {
     setIsLoading(true);
     setErrorState(null);
 
+    // =========================================================================
+    // MODALITÀ DEPOSITO: ESECUZIONE SOVRANA, RESILIENTE E ZERO ATTRITO
+    // Non fallisce mai: se l'API non è raggiungibile (offline, Netlify SPA, ecc.)
+    // salva immediatamente il pensiero nella cassaforte locale senza errori.
+    // =========================================================================
+    if (modalita === "deposito") {
+      let aiData: any = null;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const response = await fetch("/api/jarvis/analizza", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: trimmed,
+            modalita: "deposito",
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            aiData = await response.json();
+          }
+        }
+      } catch {
+        // Fallback locale immediato e trasparente: sovranità e resilienza offline
+      }
+
+      const now = new Date();
+      const timestampFormatted = now.toLocaleString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const extractedKeys =
+        aiData?.chiaviDiPensiero && Array.isArray(aiData.chiaviDiPensiero) && aiData.chiaviDiPensiero.length > 0
+          ? aiData.chiaviDiPensiero
+          : trimmed
+              .replace(/[^\w\sàèéìòù]/gi, " ")
+              .split(/\s+/)
+              .filter((w) => w.length > 3)
+              .slice(0, 4)
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+      const depositoRecord: AnalysisRecord = {
+        id: crypto.randomUUID(),
+        timestamp: timestampFormatted,
+        timestampMs: Date.now(),
+        rawInput: trimmed,
+        trascrizionePulita: aiData?.trascrizionePulita || trimmed,
+        modalita: "deposito",
+        modalitaEffettiva: "deposito",
+        fuoriPerimetro: false,
+        rispostaVocale: aiData?.rispostaVocale || {
+          situazione: "Pensiero accolto e custodito nel deposito personale.",
+          puntiSalienti: [
+            "Nessun compito generato.",
+            "Pensiero al sicuro nella memoria locale.",
+            "La mente può staccare.",
+          ],
+          prossimoPasso: "Nessuna azione richiesta.",
+          testoParlatoCompleto:
+            "Ho archiviato il tuo pensiero nel deposito personale. Non ci sono compiti da eseguire né baby step forzati. La mente può staccare.",
+          durataStimataSecondi: 12,
+        },
+        deposito: {
+          sintesi: aiData?.deposito?.sintesi || aiData?.sintesi || trimmed,
+          chiaviDiPensiero: extractedKeys.length > 0 ? extractedKeys : ["Pensiero custodito"],
+          annotazioneSilenziosa:
+            aiData?.deposito?.annotazioneSilenziosa ||
+            "Pensiero custodito nella cassaforte personale sovrana.",
+        },
+        sintesi: aiData?.deposito?.sintesi || aiData?.sintesi || trimmed,
+      };
+
+      setCurrentRecord(depositoRecord);
+      saveAnalysisRecord(depositoRecord);
+      setHistory(loadHistory());
+      setInputText("");
+      setActiveTab("analisi");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const memoryContext = buildMemoryContextForAI();
       const response = await fetch("/api/jarvis/analizza", {
@@ -197,7 +289,10 @@ export default function App() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const contentType = response.headers.get("content-type") || "";
+        const errorData = contentType.includes("application/json")
+          ? await response.json().catch(() => ({}))
+          : {};
         const raw = String(errorData.error || "");
         const isTemporaryBusy =
           response.status === 503 ||
@@ -221,6 +316,15 @@ export default function App() {
 
         setErrorState({
           message: "Si è verificato un errore durante l'elaborazione. Riprova tra poco.",
+          isRetryable: true,
+        });
+        return;
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        setErrorState({
+          message: "Il servizio di elaborazione intelligente non ha restituito una risposta valida. Riprova tra poco.",
           isRetryable: true,
         });
         return;
@@ -384,9 +488,14 @@ export default function App() {
       // Salva sempre il nuovo record e aggiorna reattivamente lo stato locale
       saveAnalysisRecord(newRecord);
       setHistory(loadHistory());
+      setInputText("");
 
-      // Porta subito l'utente sulla Dashboard per visualizzare l'analisi appena generata in cima
-      setActiveTab("dashboard");
+      // Se la modalità effettiva è deposito, mantieni la visualizzazione sulla cabina di regia per mostrare la conferma del deposito
+      if (modalitaEffettiva === "deposito") {
+        setActiveTab("analisi");
+      } else {
+        setActiveTab("dashboard");
+      }
     } catch (err: unknown) {
       const raw = String(err instanceof Error ? err.message : err);
       const isTemporaryBusy =
