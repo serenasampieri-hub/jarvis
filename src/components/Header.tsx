@@ -15,6 +15,7 @@ interface HeaderProps {
   syncStatus?: SyncStatus;
   lastSyncedAt?: string;
   onTriggerSync?: () => void;
+  onOpenSyncSettings?: () => void;
   pendingHypothesesCount?: number;
 }
 
@@ -31,6 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
   syncStatus = "unconfigured",
   lastSyncedAt,
   onTriggerSync,
+  onOpenSyncSettings,
   pendingHypothesesCount = 0,
 }) => {
   return (
@@ -132,46 +134,38 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Nuova</span>
           </button>
 
-          {/* Indicatore Silenzioso di Sincronizzazione Google Drive (Fase 3) */}
+          {/* Pulsante Sincronizzazione Sovrana Google Drive (PC & iPhone) */}
           <button
             type="button"
-            onClick={onTriggerSync || onOpenHistory}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all cursor-pointer shadow-xs ${
+            onClick={onOpenSyncSettings || onTriggerSync || onOpenHistory}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer shadow-xs min-h-[36px] ${
               syncStatus === "synced"
-                ? "bg-emerald-50/80 border-emerald-200 text-emerald-800 hover:bg-emerald-100/80"
+                ? "bg-emerald-50/80 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
                 : syncStatus === "syncing"
-                ? "bg-amber-50/80 border-amber-200 text-amber-800"
+                ? "bg-amber-50/80 border-amber-300 text-amber-800"
                 : syncStatus === "error"
-                ? "bg-rose-50/80 border-rose-200 text-rose-800 hover:bg-rose-100/80"
-                : "bg-slate-50 border-slate-200/80 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                ? "bg-rose-50/80 border-rose-300 text-rose-800 hover:bg-rose-100"
+                : "bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900"
             }`}
-            title={
-              syncStatus === "synced"
-                ? `Sincronizzato con Google Drive appDataFolder (Ultimo allineamento: ${lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : "N/D"}). Clicca per sincronizzare ora.`
-                : syncStatus === "syncing"
-                ? "Sincronizzazione in corso..."
-                : syncStatus === "error"
-                ? "Errore sincronizzazione. Clicca per riprovare."
-                : "Sync Google Drive non attivo (Archiviazione 100% locale). Clicca per configurare."
-            }
+            title="Impostazioni di sincronizzazione multi-dispositivo Google Drive (PC & iPhone). Clicca per aprire il pannello."
           >
             {syncStatus === "syncing" ? (
-              <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
             ) : syncStatus === "synced" ? (
-              <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+              <Cloud className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             ) : syncStatus === "error" ? (
-              <CloudOff className="w-3.5 h-3.5 text-rose-600" />
+              <CloudOff className="w-3.5 h-3.5 text-rose-600 shrink-0" />
             ) : (
-              <CloudOff className="w-3.5 h-3.5 text-slate-400" />
+              <Cloud className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             )}
-            <span className="hidden md:inline font-medium text-[11px]">
+            <span className="font-semibold text-[11px]">
               {syncStatus === "synced"
-                ? `Sync: ${lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : "OK"}`
+                ? "Sync: OK"
                 : syncStatus === "syncing"
                 ? "Sync..."
                 : syncStatus === "error"
-                ? "Sync Errore"
-                : "Locale"}
+                ? "Sync: Errore"
+                : "Sync"}
             </span>
           </button>
 

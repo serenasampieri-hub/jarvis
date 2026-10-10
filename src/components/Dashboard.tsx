@@ -34,6 +34,7 @@ import {
   Brain,
   Plus,
   Volume2,
+  Cloud,
 } from "lucide-react";
 import { DailyBriefingCard } from "./DailyBriefingCard";
 import { generateDailyBriefing } from "../utils/briefingVoice";
@@ -72,6 +73,7 @@ interface DashboardProps {
   onSelectRecord: (record: AnalysisRecord) => void;
   onNavigateToAnalysis: () => void;
   onNavigateToScaricoRapido?: () => void;
+  onNavigateToSync?: () => void;
 }
 
 function checkIsImminente(termine: string, vincolante: boolean): boolean {
@@ -128,6 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSelectRecord,
   onNavigateToAnalysis,
   onNavigateToScaricoRapido,
+  onNavigateToSync,
 }) => {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -772,6 +775,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 title="Passa a Deposito con un solo tocco per scaricare la mente e dettare"
               >
                 <span>⚡ Scarico Rapido</span>
+              </button>
+            )}
+
+            {onNavigateToSync && (
+              <button
+                type="button"
+                onClick={onNavigateToSync}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 text-xs font-bold transition-all cursor-pointer shadow-xs min-h-[38px]"
+                title="Apri impostazioni e sincronizzazione multi-dispositivo Google Drive"
+              >
+                <Cloud className="w-3.5 h-3.5 text-sky-600" />
+                <span>Sync Google Drive</span>
               </button>
             )}
 

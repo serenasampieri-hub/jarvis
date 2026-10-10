@@ -21,6 +21,7 @@ import {
 import { Dashboard } from "./components/Dashboard";
 import { BetaSurveyModal } from "./components/BetaSurveyModal";
 import { BrochureModal } from "./components/BrochureModal";
+import { SyncSettingsModal } from "./components/SyncSettingsModal";
 import { MemoryDossierManager } from "./components/MemoryDossierManager";
 import { loadBetaSurvey, BetaSurveyData, loadMemories, buildMemoryContextForAI } from "./utils/storage";
 import { classifyPerimeter } from "./utils/perimeter";
@@ -43,6 +44,7 @@ export default function App() {
     isRetryable: boolean;
   } | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const [isBrochureOpen, setIsBrochureOpen] = useState(false);
   const [surveyData, setSurveyData] = useState<BetaSurveyData>(loadBetaSurvey);
@@ -719,6 +721,7 @@ export default function App() {
         syncStatus={settings.syncStatus || "unconfigured"}
         lastSyncedAt={settings.lastSyncedAt}
         onTriggerSync={handleTriggerSync}
+        onOpenSyncSettings={() => setIsSyncModalOpen(true)}
         pendingHypothesesCount={pendingHypotheses}
       />
 
@@ -801,6 +804,7 @@ export default function App() {
             }}
             onNavigateToAnalysis={() => setActiveTab("analisi")}
             onNavigateToScaricoRapido={handleNavigateToScaricoRapido}
+            onNavigateToSync={() => setIsSyncModalOpen(true)}
           />
         ) : activeTab === "memoria" ? (
           /* VISTA 3: MEMORIA STORICA & SECONDO CERVELLO (FASE 5) */
@@ -860,12 +864,35 @@ export default function App() {
         onUpdateSettings={handleUpdateSettings}
         isSyncing={isSyncing}
         onTriggerSync={handleTriggerSync}
+        onOpenSyncModal={() => {
+          setIsHistoryOpen(false);
+          setIsSyncModalOpen(true);
+        }}
         onReloadData={() => {
           const freshHistory = loadHistory();
           setHistory(freshHistory);
           setSettings(loadSettings());
           setSurveyData(loadBetaSurvey());
           setCurrentRecord(freshHistory.length > 0 ? freshHistory[0] : null);
+        }}
+      />
+
+      {/* Modale Impostazioni & Sincronizzazione Sovrana Multi-Dispositivo */}
+      <SyncSettingsModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+        onTriggerSync={handleTriggerSync}
+        isSyncing={isSyncing}
+        onReloadData={() => {
+          const freshHistory = loadHistory();
+          setHistory(freshHistory);
+          setSettings(loadSettings());
+          setSurveyData(loadBetaSurvey());
+          if (freshHistory.length > 0 && !currentRecord) {
+            setCurrentRecord(freshHistory[0]);
+          }
         }}
       />
 

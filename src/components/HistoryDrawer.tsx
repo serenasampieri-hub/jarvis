@@ -46,6 +46,7 @@ interface HistoryDrawerProps {
   onReloadData?: () => void;
   isSyncing?: boolean;
   onTriggerSync?: () => Promise<void>;
+  onOpenSyncModal?: () => void;
 }
 
 export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
@@ -60,6 +61,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   onReloadData,
   isSyncing = false,
   onTriggerSync,
+  onOpenSyncModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -650,6 +652,17 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                     </>
                   )}
                 </button>
+
+                {onOpenSyncModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenSyncModal}
+                    className="w-full mt-2 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-sky-800 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-sky-600" />
+                    <span>Apri Pannello di Sincronizzazione Completo</span>
+                  </button>
+                )}
               </div>
 
               {/* Feedback Sincronizzazione */}
